@@ -166,6 +166,7 @@ description: "Task list for AI Cover Generator feature implementation"
 - [ ] T065 Create comprehensive README.md with setup instructions
 - [ ] T066 Add deployment configuration for Vercel
 - [ ] T067 Implement environment-specific configurations
+- [ ] T068 Create health check endpoint in src/app/api/health/route.ts for uptime monitoring
 
 ---
 
