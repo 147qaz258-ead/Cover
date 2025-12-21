@@ -1,57 +1,36 @@
 # Implementation Plan: AI Cover Generator
 
-**Branch**: `001-ai-cover-generator` | **Date**: 2025-12-21 | **Spec**: [specs/001-ai-cover-generator/spec.md](spec.md)
+**Branch**: `001-ai-cover-generator` | **Date**: 2025-12-21 | **Spec**: [link](spec.md)
 **Input**: Feature specification from `/specs/001-ai-cover-generator/spec.md`
-
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-Building an AI-powered cover generation platform for content creators (小红书, 电商商家, 公众号) that uses intelligent agent systems to decompose user text input and generate platform-optimized covers. The system follows glue development principles - composing existing mature libraries without reinventing functionality. Key innovation is the multi-stage AI pipeline that can handle both simple titles and full articles, automatically extracting key points and generating visually appropriate covers.
+AI封面生成器，使用多阶段AI代理链处理用户文本内容，为小红书创作者、电商商家和公众号服务生成高质量、可直接发布的封面海报。系统采用胶水式开发架构，完全基于成熟开源库构建，不重复造轮子。
 
 ## Technical Context
 
-**Language/Version**: TypeScript (Next.js 14 App Router)
+**Language/Version**: TypeScript 5.x, Next.js 14 (App Router)
 **Primary Dependencies**:
-- Frontend: React 18, Tailwind CSS, shadcn/ui, Framer Motion
-- Backend: Next.js API Routes (Edge-compatible where possible)
-- AI Services: OpenAI API / Gemini (text), nano banana pro / qwen / 豆包 (images)
-- Storage: Cloudflare R2 (images), Supabase (optional user system)
-**Storage**: Cloudflare R2 for image storage, stateless API design
-**Testing**: Vitest + Testing Library + Playwright
+- Frontend: Next.js 14, React 18, Tailwind CSS, shadcn/ui, Framer Motion
+- Backend: Next.js API Routes (Edge-first), Cloudflare R2
+- AI Services: OpenAI API, Gemini API, Nano Banana Pro, Qwen, 豆包, Replicate, OpenAI Images
+**Storage**: Cloudflare R2 for images, Supabase (optional for user system)
+**Testing**: Jest, React Testing Library, Playwright
 **Target Platform**: Web (Vercel/Edge deployment)
-**Project Type**: Single full-stack web application with AI integration
-**Performance Goals**: <30s generation time, Edge-optimized for global latency
-**Constraints**: Stateless design, no model training, modular/replacable AI services
-**Scale/Scope**: Initial MVP supporting 3 platforms (小红书9:16, 公众号2.35:1, 商品1:1)
+**Project Type**: Full-stack web application
+**Performance Goals**: <30s cover generation, handle 100 concurrent users
+**Constraints**: Stateless backend, Edge-first deployment, modular replaceable components
+**Scale/Scope**: MVP for NVP phase, extensible architecture for multi-service AI integration
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-### I. Mature Library First ✅
-- All dependencies are established production-ready libraries
-- Next.js, React, Tailwind, shadcn/ui are mature with proven track records
-- AI services via established APIs (OpenAI, etc.)
-
-### II. Zero-Copy Integration ✅
-- No copying of library code into project
-- Using package managers (npm/pnpm) for all dependencies
-- Direct API integration with AI services
-
-### III. Production-Grade Dependencies Only ✅
-- Using official packages and APIs, no simplified versions
-- All dependencies point to complete implementations
-
-### IV. Minimal Glue Code ✅
-- Project limited to business orchestration and module composition
-- AI services wrapped in adapter functions for easy replacement
-- Template system for modular design iteration
-
-### V. Transparent Integration ✅
-- Direct imports of all dependencies
-- Clear attribution of external functionality in code
-- No "import-only" pseudo-integrations
+**✅ Principle I - Mature Library First**: All technologies are established production libraries
+**✅ Principle II - Zero-Copy Integration**: Using libraries as-is via package managers
+**✅ Principle III - Production-Grade Dependencies Only**: All dependencies are full production versions
+**✅ Principle IV - Minimal Glue Code**: Focus on orchestration between AI services and UI components
+**✅ Principle V - Transparent Integration**: Direct imports with clear attribution of external functionality
 
 ## Project Structure
 
@@ -60,66 +39,101 @@ Building an AI-powered cover generation platform for content creators (小红书
 ```text
 specs/001-ai-cover-generator/
 ├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
+├── spec.md              # Feature specification
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output
+│   ├── api.yml         # OpenAPI specification
+│   └── ai-agents.md    # AI service contracts
 └── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
 ```
 
 ### Source Code (repository root)
 
 ```text
-# Web application with Next.js App Router
-app/
-├── (dashboard)/
-│   ├── generate/
-│   │   ├── page.tsx         # Main cover generation interface
-│   │   └── components/
-│   │       ├── TextInput.tsx
-│   │       ├── StyleSelector.tsx
-│   │       ├── PlatformSelector.tsx
-│   │       └── CoverPreview.tsx
-│   └── history/
-│       └── page.tsx         # User generation history
-├── api/
-│   ├── generate/
-│   │   ├── route.ts         # Main generation endpoint
-│   │   └── agents/
-│   │       ├── text-analysis.ts
-│   │       ├── title-extraction.ts
-│   │       ├── visual-concept.ts
-│   │       └── image-generation.ts
-│   └── templates/
-│       └── route.ts         # Template management
-├── lib/
-│   ├── ai/
-│   │   ├── providers/
-│   │   │   ├── openai.ts
-│   │   │   ├── gemini.ts
-│   │   │   ├── qwen.ts
-│   │   │   └── doubao.ts
-│   │   └── adapters/
-│   │       └── ai-client.ts   # Unified AI interface
-│   ├── storage/
-│   │   └── r2.ts            # Cloudflare R2 integration
-│   └── templates/
-│       └── template-engine.ts # Template processing
-├── components/
-│   ├── ui/                 # shadcn/ui components
-│   └── layout/
-├── types/
-│   ├── ai.ts              # AI service types
-│   ├── templates.ts       # Template types
-│   └── platform.ts        # Platform specifications
-└── styles/
-    └── globals.css
+# Single project with clear module boundaries
+src/
+├── app/                 # Next.js App Router
+│   ├── (dashboard)/    # Main application routes
+│   ├── api/           # API routes (backend)
+│   └── globals.css
+├── components/         # React components
+│   ├── ui/            # shadcn/ui components
+│   ├── forms/         # Form components
+│   └── covers/        # Cover-specific components
+├── lib/               # Utility libraries and integrations
+│   ├── ai/           # AI service integrations
+│   ├── storage/      # R2/Supabase integrations
+│   └── utils/        # Helper functions
+└── types/            # TypeScript type definitions
+
+tests/
+├── contract/         # AI service integration tests
+├── integration/      # End-to-end tests
+└── unit/            # Unit tests
 ```
 
-**Structure Decision**: Next.js App Router with TypeScript, following glue development principles. All functionality achieved through composition of existing libraries - no custom implementations of core features.
+**Structure Decision**: Single Next.js project with clear module boundaries, following the glue development principle of orchestrating existing libraries rather than building custom infrastructure.
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+No violations detected - all requirements align with constitution principles of minimal glue code and mature library first approach.
 
-No constitutional violations identified. All complexity is justified by business requirements and achieved through legitimate composition of mature dependencies.
+---
+
+## Phase 0: Research & Technology Selection
+
+**Purpose**: Validate technology choices and identify reusable open-source modules
+
+### AI Service Integration Research
+
+**Decision**: Use LangChain.js for AI agent orchestration
+**Rationale**:
+- Production-ready library with proven track record
+- Supports multiple AI providers (OpenAI, Gemini, etc.)
+- Built-in agent chain capabilities
+- Eliminates need to implement agent pipeline from scratch
+
+**Alternatives considered**:
+- Custom implementation (violates constitution)
+- Vercel AI SDK (less flexible for complex agent chains)
+
+### UI Component Library Research
+
+**Decision**: shadcn/ui + Tailwind CSS
+**Rationale**:
+- Complete production UI component library
+- Built on Radix UI primitives
+- Fully customizable with Tailwind
+- No need to implement custom components
+
+**Alternatives considered**:
+- Material-UI (opinionated design system)
+- Ant Design (heavy bundle size)
+
+### Storage Strategy Research
+
+**Decision**: Cloudflare R2 for image storage
+**Rationale**:
+- S3-compatible API, multiple client libraries available
+- Edge-optimized for global performance
+- No custom storage implementation needed
+
+**Alternatives considered**:
+- AWS S3 (vendor lock-in)
+- Custom file storage (violates constitution)
+
+### Modular Architecture Research
+
+**Decision**: Plugin-based architecture for AI services
+**Rationale**:
+- Each AI service as independent module
+- Common interface for easy swapping
+- Follows constitution principle of replaceable modules
+
+**Key Modules Identified**:
+1. Text Analysis Agent (blog/article processing)
+2. Title Generation Agent (structured prompt)
+3. Image Generation Agent (multiple providers)
+4. Layout Agent (template-based positioning)
