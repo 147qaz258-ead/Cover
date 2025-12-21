@@ -96,6 +96,9 @@
 - **Platform Spec**: Platform-specific requirements (aspect ratio, safe zones, text limits)
 - **Generation Job**: User request with text input, style selection, and output requirements
 - **Prompt Template**: Structured prompts for AI services with placeholder injection
+- **AI Agent Pipeline**: Multi-stage processing system (Text Analysis → Content Extraction → Title Generation → Visual Concept)
+- **Content Interpretation**: AI-processed output showing extracted titles, key points, and visual concepts
+- **Structured Response**: Standardized format returned by AI text processing agents for downstream image generation
 
 ## Success Criteria *(mandatory)*
 
