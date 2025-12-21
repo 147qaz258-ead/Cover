@@ -5,6 +5,14 @@
 **Status**: Draft
 **Input**: User description: "我们正在构建一个 AI 封面生成器，专为不会设计，觉得ps麻烦的用户，但需要频繁发布内容的小红书创作者和电扇商家以及公众号服务，核心目标用ai生图抹除设计的边界。用户只需要输入一句内容一段文本，选择一个风格，系统会在 30 秒内生成一张符合平台比例、文字结构和视觉习惯、可直接发布的封面海报，需要摆脱MVP的设计图片风格，而是生成高质量封面的图片，需要接入各种图片服务，将复杂功能隐藏在后端，给用户开箱即用的触感。与通用的 AI 画图工具不同，我们不追求无限自由（但是需要有这个功能，使用无线画布的风格），同时通过强约束的模板和排版规则，帮助用户稳定地产出"看起来就对"的封面。这是一个"结果导向"的封面生成工具，这是一个强设定的平台，只专注于生成优秀的封面，。用户不需要设计决策用户只做输入和选择系统负责所有排版与视觉判断（需要一个提示词词系统）"
 
+## Clarifications
+
+### Session 2025-12-21
+
+- Q: Text Processing Workflow → A: Multi-stage AI pipeline: Text Analysis Agent → Content Extraction Agent → Title Generation Agent → Visual Concept Agent
+- Q: User Interaction Model → A: Show AI interpretations without intervention during generation, but allow editing after generation is complete
+- Q: Content Types Support → A: Blog posts/articles with structured prompt-based AI processing and standardized return format
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - 快速生成封面 (Priority: P1)
