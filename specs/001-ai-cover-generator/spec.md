@@ -73,7 +73,7 @@
 
 ### Functional Requirements
 
-- **FR-001**: System MUST allow users to input text content for cover generation
+- **FR-001**: System MUST allow users to input text content (titles, paragraphs, articles) for cover generation
 - **FR-002**: System MUST provide predefined style templates for different use cases
 - **FR-003**: System MUST generate platform-specific aspect ratios (小红书9:16, 公众号2.35:1, 商品1:1)
 - **FR-004**: System MUST complete cover generation within 30 seconds
@@ -83,6 +83,11 @@
 - **FR-008**: System MUST support batch generation for multiple platforms
 - **FR-009**: System MUST provide an "infinite canvas" mode for advanced customization
 - **FR-010**: System MUST validate input text length and content appropriateness
+- **FR-011**: System MUST implement multi-stage AI pipeline for text processing (Analysis → Extraction → Title Generation → Visual Concept)
+- **FR-012**: System MUST display AI interpretation of user content without requiring approval during generation
+- **FR-013**: System MUST allow users to edit AI-generated content after cover generation is complete
+- **FR-014**: System MUST use structured prompts with standardized return format for AI text processing
+- **FR-015**: System MUST specifically handle blog posts and articles by extracting key points and generating appropriate titles
 
 ### Key Entities *(include if feature involves data)*
 
