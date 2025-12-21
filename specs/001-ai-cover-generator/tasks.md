@@ -83,23 +83,23 @@ description: "Task list for AI Cover Generator feature implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T019 [P] [US1] Create Text Analysis Agent in src/lib/ai/agents/text-analyzer.ts using LangChain.js
-- [ ] T020 [P] [US1] Create Title Generation Agent in src/lib/ai/agents/title-generator.ts
-- [ ] T021 [P] [US1] Create Image Generation Agent in src/lib/ai/agents/image-generator.ts
-- [ ] T022 [US1] Implement AI Agent Pipeline orchestrator in src/lib/ai/pipeline/
-- [ ] T023 [US1] Create Cover Generation API endpoint in src/app/api/generate/route.ts
-- [ ] T024 [US1] Implement Job Status API endpoint in src/app/api/generate/[jobId]/route.ts
-- [ ] T025 [P] [US1] Create Cover Generation Job type in src/types/jobs.ts
-- [ ] T026 [US1] Implement text input component in src/components/forms/text-input.tsx
-- [ ] T027 [P] [US1] Create style selector component in src/components/forms/style-selector.tsx
-- [ ] T028 [US1] Create platform selector component in src/components/forms/platform-selector.tsx
-- [ ] T029 [US1] Implement Cover Generator main component in src/components/covers/cover-generator.tsx
-- [ ] T030 [US1] Create cover display component in src/components/covers/cover-display.tsx
-- [ ] T031 [US1] Implement progress tracking component in src/components/ui/progress-indicator.tsx
-- [ ] T032 [P] [US1] Create main cover generation page in src/app/(dashboard)/generate/page.tsx
-- [ ] T033 [US1] Implement result display page in src/app/(dashboard)/results/[jobId]/page.tsx
-- [ ] T034 [US1] Add Cover Generation Job type definition in src/types/generated-cover.ts
-- [ ] T035 [US1] Create cover editing functionality in src/components/covers/cover-editor.tsx
+- [ ] T020 [P] [US1] Create Text Analysis Agent in src/lib/ai/agents/text-analyzer.ts using LangChain.js
+- [ ] T021 [P] [US1] Create Title Generation Agent in src/lib/ai/agents/title-generator.ts
+- [ ] T022 [P] [US1] Create Image Generation Agent in src/lib/ai/agents/image-generator.ts
+- [ ] T023 [US1] Implement AI Agent Pipeline orchestrator in src/lib/ai/pipeline/
+- [ ] T024 [US1] Create Cover Generation API endpoint in src/app/api/generate/route.ts
+- [ ] T025 [US1] Implement Job Status API endpoint in src/app/api/generate/[jobId]/route.ts
+- [ ] T026 [P] [US1] Create Cover Generation Job type in src/types/jobs.ts
+- [ ] T027 [US1] Implement text input component in src/components/forms/text-input.tsx
+- [ ] T028 [P] [US1] Create style selector component in src/components/forms/style-selector.tsx
+- [ ] T029 [US1] Create platform selector component in src/components/forms/platform-selector.tsx
+- [ ] T030 [US1] Implement Cover Generator main component in src/components/covers/cover-generator.tsx
+- [ ] T031 [US1] Create cover display component in src/components/covers/cover-display.tsx
+- [ ] T032 [US1] Implement progress tracking component in src/components/ui/progress-indicator.tsx
+- [ ] T033 [P] [US1] Create main cover generation page in src/app/(dashboard)/generate/page.tsx
+- [ ] T034 [US1] Implement result display page in src/app/(dashboard)/results/[jobId]/page.tsx
+- [ ] T035 [US1] Add Cover Generation Job type definition in src/types/generated-cover.ts
+- [ ] T036 [US1] Create cover editing functionality in src/components/covers/cover-editor.tsx
 
 **Checkpoint**: User Story 1 should be fully functional and testable independently
 
