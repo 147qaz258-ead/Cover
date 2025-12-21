@@ -83,11 +83,14 @@
 - **FR-008**: System MUST support batch generation for multiple platforms
 - **FR-009**: System MUST provide an "infinite canvas" mode for advanced customization
 - **FR-010**: System MUST validate input text length and content appropriateness
-- **FR-011**: System MUST implement multi-stage AI pipeline for text processing (Analysis → Extraction → Title Generation → Visual Concept)
+- **FR-011**: System MUST implement multi-stage AI pipeline for text processing using LangChain.js (Analysis → Extraction → Title Generation → Visual Concept)
 - **FR-012**: System MUST display AI interpretation of user content without requiring approval during generation
 - **FR-013**: System MUST allow users to edit AI-generated content after cover generation is complete
 - **FR-014**: System MUST use structured prompts with standardized return format for AI text processing
 - **FR-015**: System MUST specifically handle blog posts and articles by extracting key points and generating appropriate titles
+- **FR-016**: System MUST implement content moderation using OpenAI Moderation API before processing user input
+- **FR-017**: System MUST provide platform-specific layout templates for automatic text positioning (not custom layout algorithm)
+- **FR-018**: System MUST implement health monitoring with uptime tracking to meet 99.5% availability goal
 
 ### Key Entities *(include if feature involves data)*
 
