@@ -79,7 +79,7 @@
 - **FR-004**: System MUST complete cover generation within 30 seconds
 - **FR-005**: System MUST handle text auto-layout and typography optimization
 - **FR-006**: System MUST integrate multiple AI image generation services
-- **FR-007**: System MUST include a prompt engineering system for visual quality control
+- **FR-007**: System MUST use existing prompt template libraries for consistent AI interactions (no custom prompt engineering implementation)
 - **FR-008**: System MUST support batch generation for multiple platforms
 - **FR-009**: System MUST provide an "infinite canvas" mode for advanced customization
 - **FR-010**: System MUST validate input text length and content appropriateness
