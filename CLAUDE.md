@@ -1,45 +1,188 @@
-﻿# Cover Development Guidelines
+﻿# CLAUDE.md
 
-Auto-generated from all feature plans. Last updated: 2025-12-21
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Active Technologies
 
-- TypeScript 5.x, Next.js 14 (App Router) (001-ai-cover-generator)
+- TypeScript 5.7, Next.js 14 (App Router), React 18
+- Fabric.js 6 (canvas operations)
+- AI: OpenAI, Google Gemini, Replicate, LangChain
+- Storage: AWS S3 SDK (for Cloudflare R2)
+- UI: Tailwind CSS, shadcn/ui, Framer Motion
 
-## Project Structure
+## Project Overview
 
-```text
-backend/
-frontend/
-tests/
-```
+Cover is an AI-powered cover image generator for Chinese social media platforms (Xiaohongshu, WeChat, Taobao, Douyin). It uses multi-stage AI agent chains to process user text and generate platform-specific, publication-ready cover posters.
 
 ## Commands
 
-npm test; npm run lint
+```bash
+# Development
+npm run dev              # Start dev server (localhost:3000)
 
-## Code Style
+# Build
+npm run build            # Production build
+npm start               # Start production server
 
-TypeScript 5.x, Next.js 14 (App Router): Follow standard conventions
+# Code Quality
+npm run lint            # ESLint
+npm run type-check      # TypeScript check (tsc --noEmit)
+```
+
+## Architecture
+
+### AI Generation Pipeline
+
+**CoverCreativeDirector（单次 LLM 调用）**:
+```
+User Text → CoverCreativeDirector (LLM) → {
+            analysis, titles, imagePrompt
+         } → ImageGenerator → Image
+```
+
+> 旧的 3-LLM 模式（TextAnalyzer + TitleGenerator + 设计师 LLM）已于 2025-12-24 废弃删除。
+
+### Image Generation Flow
+
+```
+ModelRegistry → ModelConfig (priority, API key, endpoint)
+     ↓
+ImageGenerationAgent.generateImage()
+     ↓
+1. Check Cache (CacheFactory) → Return if hit
+     ↓
+2. Build Image Prompt (Designer LLM + Style Injection)
+     ↓
+3. generateWithFallback() → Retry (exponential backoff)
+                         → Fallback (fallbackTo model)
+     ↓
+4. Provider.generateImage() → URL or Buffer
+     ↓
+5. Optimize Image (WebP, resize) → Upload to Storage
+     ↓
+6. Cache Result (30 min TTL)
+```
+
+### Storage Abstraction
+
+```
+STORAGE_MODE (env: "local" | "r2")
+     ↓
+StorageDriver interface
+     ├─ LocalStorageDriver (fs/promises) → .local-storage/
+     └─ R2StorageDriver (@aws-sdk/client-s3) → Cloudflare R2
+```
+
+## Key Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `ImageGenerationAgent` | `lib/ai/agents/` | Image generation with retry/fallback, caching |
+| `CoverCreativeDirector` | `lib/ai/agents/` | Unified 1-LLM agent for analysis+titles+prompt |
+| `ModelRegistry` | `lib/ai/config/` | Returns available models based on API keys |
+| `OpenAIProvider` | `lib/ai/providers/` | DALL-E, GPT-4o, Flux (via Laozhang) |
+| `GeminiImageProvider` | `lib/ai/providers/` | Gemini 2.5/3 Pro Image |
+| `TextPositioningManager` | `lib/canvas/` | Fabric.js text positioning, drag-and-drop |
+| `CanvasExporter` | `lib/canvas/` | Multi-format export (PNG/JPG/WebP/SVG) |
+| `StorageDriver` | `lib/storage/` | Unified upload/get/delete API |
+
+## Project Structure
+
+```
+src/
+├── app/                          # Next.js App Router
+│   ├── (dashboard)/              # Dashboard route group
+│   │   ├── generate/             # Main generation page
+│   │   └── results/[jobId]/      # Results page
+│   ├── api/                      # API Routes
+│   │   ├── generate/             # Cover generation endpoints
+│   │   ├── models/               # Model list API
+│   │   ├── storage/              # Local storage access
+│   │   └── visual-styles/        # Visual style templates
+│   └── globals.css
+├── components/
+│   ├── ui/                       # shadcn/ui base components
+│   ├── forms/                    # ModelSelector, PlatformSelector, etc.
+│   └── covers/                   # CoverGenerator, InfiniteCanvas, etc.
+├── lib/
+│   ├── ai/
+│   │   ├── config/               # ModelRegistry, ImageModelConfig
+│   │   ├── providers/            # AI Provider (OpenAI, Gemini, Replicate)
+│   │   ├── agents/               # Business agents
+│   │   ├── pipeline/             # CoverPipeline orchestrator
+│   │   └── prompts/              # Designer LLM prompts + visual styles
+│   ├── storage/                  # StorageDriver (local/R2)
+│   ├── canvas/                   # Fabric.js managers
+│   ├── platforms/                # Platform specifications
+│   └── middleware/               # Analytics, moderation, rate-limit
+├── types/                        # TypeScript type definitions
+└── hooks/                        # React hooks
+```
+
+## Fabric.js v6 Usage
+
+Use ES Module named imports (not default):
+
+```typescript
+import { Canvas, IText, FabricObject, FabricImage, Shadow } from "fabric";
+```
+
+## Environment Variables
+
+Key variables (see `.env.local.example`):
+
+```bash
+# AI Provider API Keys (at least one required)
+OPENAI_API_KEY=                    # OpenAI Official
+GOOGLE_AI_API_KEY=                 # Google Gemini
+REPLICATE_API_TOKEN=               # Replicate
+LAOZHANG_API_KEY=                  # Laozhang API relay (recommended)
+
+# Storage Mode
+STORAGE_MODE=local                 # "local" (dev) or "r2" (prod)
+
+# Cloudflare R2 (only if STORAGE_MODE=r2)
+CLOUDFLARE_R2_ACCESS_KEY=
+CLOUDFLARE_R2_SECRET_KEY=
+CLOUDFLARE_R2_BUCKET_NAME=
+CLOUDFLARE_R2_ACCOUNT_ID=
+CLOUDFLARE_R2_PUBLIC_URL=
+
+# Pipeline Mode (已废弃，现在始终使用 CreativeDirector)
+# USE_CREATIVE_DIRECTOR=true
+```
+
+## API Routes
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/generate` | POST | Main cover generation (async job) |
+| `/api/generate/[jobId]` | GET | Job status polling |
+| `/api/models` | GET | Available AI models |
+| `/api/storage/[...path]` | GET/POST | Local file access |
+| `/api/visual-styles` | GET | Visual style templates |
+
+## Code Style Rules (Project Constitution)
+
+This project follows **strict glue development principles**:
+
+1. **No custom core algorithms** - Delegate all AI, storage, canvas operations to mature libraries
+2. **No wrapper classes** - Direct library API calls in business orchestrators
+3. **Zero-copy integration** - Load libraries via package manager, never copy code locally
+4. **Single Source of Truth** - All UI/business decisions based on locally extracted data
+5. **Schema validation at entry** - Zod validation at API boundaries
+6. **Separate I/O from computation** - Pure functions vs side effects strictly separated
+7. **Precise variable names** - No `data`, `obj`, `res` - use business-meaningful names
+8. **Transform errors** - Catch and convert to business-semantic errors
+9. **No magic values** - Extract to constants/config
+10. **Single responsibility** - Glue code functions handle one flow node only
+11. **Stateless pipelines** - Prefer pipelines over state machines
+12. **Explicit resource lifecycle** - Use try-finally for resources
 
 ## Recent Changes
 
-- 001-ai-cover-generator: Added TypeScript 5.x, Next.js 14 (App Router)
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
-不得在当前项目中编写非业务流的核心算法或底层逻辑，必须全权委托给成熟的外部依赖库实现。
-不得构建用于隐藏依赖库实现的通用封装层（Wrapper Class）或适配器模式，必须在业务编排函数中直接调用依赖库的完整 API。
-不得允许外部库返回的复杂对象（如大胖对象、句柄、Context）直接在业务层内部传递，必须在调用返回后立即提取最小核心数据并丢弃原对象。
-不得依赖外部库的内部状态作为业务逻辑的判断依据，所有 UI 与业务决策必须基于本地清洗后的核心数据（Single Source of Truth）。
-不得省略调用外部库前的参数边界校验，必须利用强类型或 Schema 校验库在入口处拦截非法输入，而非依赖外部库内部报错。
-不得对依赖库进行功能裁剪、逻辑重写或复制代码到本地，必须通过包管理器加载完整生产级实现。
-不得在单个函数中混合“数据处理”与“IO操作”，必须将纯计算逻辑与副作用调用（如网络、文件、硬件接口）严格分离。
-不得使用语义模糊的变量名（如 data, obj, res）承接外部库结果，必须通过精准命名体现业务上下文。
-不得吞掉外部库抛出的异常，也不得透传原始底层报错，必须捕获并转换为具有业务语义的错误结果。
-不得基于猜测使用外部接口，在未查阅文档或验证源码行为前，禁止直接编写集成代码。
-不得在业务代码中硬编码魔法值或环境配置，必须将其提取为常量或配置文件以保持编排逻辑的纯粹性。
-不得让胶水代码承担过多职责，单个函数仅允许负责单一流程节点的参数组装与调用调度。
-不得维护复杂的中间状态机，应优先通过无状态的管道（Pipeline）方式串联外部库能力。
-不得仅仅为了便利而引入未被使用的依赖库模块，生成的代码必须确保所有导入路径真实参与运行。
-不得在未定义明确生命周期的情况下持有外部资源（如连接池、文件句柄），必须利用 try-finally 或 with 机制确保资源释放。
+- 2025-12-24: 删除废弃的 TextAnalyzer/TitleGenerator，系统强制使用 CoverCreativeDirector
+- 2025-12-24: 创建 API 参考文档 (`docs/api-reference.md`)
+- 2025-12-23: Designer Prompt System - LLM-driven prompts with 6 visual style templates
+- 2025-12-23: ModelSelector integration - User-selectable image generation models
+- 2025-12-22: Fabric.js v6 migration - ES Module imports, removed @types/fabric
