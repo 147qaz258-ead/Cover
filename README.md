@@ -138,7 +138,15 @@ src/
 
 ## Sample Covers
 
-The `.local-storage/covers/` directory contains sample generated covers organized by platform (xiaohongshu, wechat, taobao, douyin). These serve as examples of the AI-generated output quality.
+Here are some AI-generated cover examples for Xiaohongshu (小红书):
+
+<p align="center">
+  <img src=".local-storage/covers/xiaohongshu/03bf2ca3-1484-498a-a899-d46539768ed9.webp" width="200" alt="Sample 1">
+  <img src=".local-storage/covers/xiaohongshu/4f9a28af-ab84-4e33-b032-82f754b74369.webp" width="200" alt="Sample 2">
+  <img src=".local-storage/covers/xiaohongshu/cdb38329-04c5-4457-ae03-4ab488960112.webp" width="200" alt="Sample 3">
+</p>
+
+More samples are available in the `.local-storage/covers/` directory, organized by platform.
 
 ## Development Commands
 

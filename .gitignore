@@ -98,7 +98,9 @@ temp/
 
 # User specified exclusions
 RedInk/
-specs/001-ai-cover-generator
+specs/
+docs/
+openspec/
 
 # Temporary/debug files
 bugfix_plan/
