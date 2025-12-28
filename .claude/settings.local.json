@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npm search:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npm install:*)",
+      "mcp__filesystem__read_multiple_files",
+      "mcp__filesystem__read_text_file"
     ]
   }
 }

@@ -8,7 +8,7 @@ import { StyleSelector } from "@/components/forms/style-selector";
 import { PlatformSelector } from "@/components/forms/platform-selector";
 import { ModelSelector } from "@/components/forms/model-selector";
 import { VisualStyleSelector } from "@/components/forms/visual-style-selector";
-import { CoverDisplay } from "@/components/covers/cover-display";
+import { MasonryGrid } from "@/components/gallery/masonry-grid";
 import { ProgressIndicator } from "@/components/ui/progress-indicator";
 import { CoverGenerationResult } from "@/types";
 import { CoverGenerationRequest } from "@/types";
@@ -46,7 +46,7 @@ export function CoverGenerator({ onComplete, showInfiniteCanvas = false }: Cover
   const [mounted, setMounted] = useState(false);
   const [text, setText] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("minimal-clean");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["xiaohongshu"]);  // 默认选中小红书
   const [selectedModelId, setSelectedModelId] = useState<string | undefined>();
   const [visualStyleId, setVisualStyleId] = useState<string | undefined>();
   const [generationState, setGenerationState] = useState<GenerationState>({
@@ -291,15 +291,29 @@ export function CoverGenerator({ onComplete, showInfiniteCanvas = false }: Cover
 
         {/* Success State with Results */}
         {generationState.status === "completed" && generationState.results && (
-          <CoverDisplay
-            covers={generationState.results}
-            onDownload={(cover) => {
-              const a = document.createElement("a");
-              a.href = cover.imageUrl;
-              a.download = `${cover.platform.name}_${cover.title}.png`;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
+          <MasonryGrid
+            items={generationState.results}
+            onDownload={async (cover) => {
+              try {
+                // 使用 fetch + Blob 方式强制下载
+                const response = await fetch(cover.imageUrl);
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${cover.platform.name}_${cover.title}.webp`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // 释放 Blob URL
+                URL.revokeObjectURL(url);
+              } catch (error) {
+                console.error("Download failed:", error);
+                // 降级：直接打开链接
+                window.open(cover.imageUrl, "_blank");
+              }
             }}
           />
         )}

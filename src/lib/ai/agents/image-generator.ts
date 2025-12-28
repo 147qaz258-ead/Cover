@@ -11,8 +11,9 @@ import { logger } from "@/lib/utils/logger";
 import { v4 as uuidv4 } from "uuid";
 import { CacheKeyGenerator, CacheFactory, CacheConfigPresets } from "@/lib/cache/cache";
 import { optimizeImage, generateWebPUrl } from "@/lib/image/optimization";
-import { loadAndInterpolate } from "@/lib/ai/prompts/loader";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// 注意：LLM 提示词生成已移至 CoverCreativeDirector
+// 本 Agent 仅负责调用图片生成 API
 
 // ==================== 常量配置 ====================
 
@@ -103,8 +104,7 @@ export class ImageGenerationAgent {
         console.log(`\n[ImageGenerator] ==================== 模型选择 ====================`);
         console.log(`[ImageGenerator] 📌 用户指定模型: ${request.modelId}`);
         console.log(`[ImageGenerator] ✅ 使用模型: ${modelConfig.name} (${modelConfig.id})`);
-        console.log(`[ImageGenerator] 🔌 Provider: ${modelConfig.provider}`);
-        console.log(`[ImageGenerator] 💰 价格: $${modelConfig.pricing?.perImage || 'N/A'}/张`);
+        console.log(`[ImageGenerator] 🔌 Provider: ${modelConfig.displayProvider || modelConfig.provider}`);
       } else {
         modelConfig = this.registry.getDefaultModel();
         console.log(`\n[ImageGenerator] ==================== 模型选择 ====================`);
@@ -289,106 +289,60 @@ export class ImageGenerationAgent {
 
   /**
    * 构建图像提示词
-   * 支持：1) 外部提示词（来自 CreativeDirector）  2) LLM 设计师生成  3) Fallback 硬编码
+   *
+   * 重构说明（2025-12-24 → 2025-12-25）：
+   * - 提示词生成已统一由 CoverCreativeDirector 完成
+   * - 2025-12-25: LLM 输出改为纯文本格式，需要提取【图片生成提示词】部分
+   * - 本方法负责从纯文本中提取图片生成提示词
+   * - 如果没有外部提示词，则抛出错误（必须先调用 CreativeDirector）
    */
   private async buildImagePrompt(request: ImageGenerationRequest): Promise<string> {
-    const { title, platform, visualStylePrompt, externalImagePrompt } = request;
+    const { externalImagePrompt, visualStylePrompt } = request;
 
-    // 优先使用外部提供的提示词（来自 CreativeDirector）
-    if (externalImagePrompt) {
-      console.log('[ImageGenerator] 🎯 使用 CreativeDirector 生成的提示词');
-      return externalImagePrompt.trim().replace(/\s+/g, ' ');
+    // 必须有外部提示词（来自 CreativeDirector）
+    if (!externalImagePrompt) {
+      this.agentLogger.error('Missing externalImagePrompt - CreativeDirector must be called first');
+      throw new Error('ImagePrompt is required. CreativeDirector must be called first.');
     }
 
-    try {
-      // 1. 加载设计师系统提示词
-      const designerPrompt = loadAndInterpolate('designer-prompt.txt', {
-        user_content: title,
-        platform: platform.name,
-        dimensions: `${platform.dimensions.width}x${platform.dimensions.height}`,
-      });
+    console.log('[ImageGenerator] 📄 使用 CreativeDirector 输出的纯文本提示词');
 
-      // 2. 调用 LLM 生成基础提示词
-      console.log('[ImageGenerator] 🎨 调用设计师 LLM...');
-      let imagePrompt = await this.callDesignerLLM(designerPrompt);
-      console.log(`[ImageGenerator] 📝 生成提示词: ${imagePrompt.substring(0, 100)}...`);
+    // 提取【图片生成提示词】部分
+    // 注意：【核心内容】【视觉设计】【排版设计】【技术规格】是图片提示词的子级结构
+    // 只在遇到顶级标记（【内容理解】【标题建议】或文本末尾）时停止
+    const promptMatch = externalImagePrompt.match(/【图片生成提示词】\n([\s\S]+?)(?=\n【内容理解】|\n【标题建议】|$)/);
+    let finalPrompt = promptMatch ? promptMatch[1].trim() : '';
 
-      // 3. 风格注入
+    // 如果正则没有匹配到，尝试获取【图片生成提示词】之后的所有内容
+    if (!finalPrompt) {
+      const startIndex = externalImagePrompt.indexOf('【图片生成提示词】');
+      if (startIndex !== -1) {
+        finalPrompt = externalImagePrompt.substring(startIndex + '【图片生成提示词】'.length).trim();
+      }
+    }
+
+    // 如果仍然没有提取到，使用完整的纯文本（fallback）
+    if (!finalPrompt) {
+      console.warn('[ImageGenerator] ⚠️ 无法提取【图片生成提示词】，使用完整文本');
+      finalPrompt = externalImagePrompt.trim();
+    }
+
+    console.log(`[ImageGenerator] 📄 提取的图片提示词长度: ${finalPrompt.length} 字符`);
+    console.log(`[ImageGenerator] 📄 提取的图片提示词内容:\n${finalPrompt}`);
+
+    // 风格注入（如果提取的提示词包含占位符）
+    if (finalPrompt.includes('[STYLE_PLACEHOLDER]')) {
       if (visualStylePrompt) {
-        imagePrompt = imagePrompt.replace('[STYLE_PLACEHOLDER]', visualStylePrompt);
+        finalPrompt = finalPrompt.replace('[STYLE_PLACEHOLDER]', visualStylePrompt);
         console.log('[ImageGenerator] 🖌️ 已注入风格模板');
       } else {
-        // 移除占位符（不替换时删除）
-        imagePrompt = imagePrompt.replace('[STYLE_PLACEHOLDER]', '');
+        // 移除占位符
+        finalPrompt = finalPrompt.replace('[STYLE_PLACEHOLDER]', '');
       }
-
-      // 清理多余空格
-      return imagePrompt.trim().replace(/\s+/g, ' ');
-    } catch (error) {
-      // LLM 调用失败时，使用简化的硬编码 fallback
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.warn('[ImageGenerator] ⚠️ LLM 调用失败，使用 fallback 提示词');
-      console.warn('[ImageGenerator] ⚠️ 错误详情:', errorMsg);
-      return this.buildFallbackPrompt(request);
-    }
-  }
-
-  /**
-   * 调用设计师 LLM 生成提示词
-   */
-  private async callDesignerLLM(prompt: string): Promise<string> {
-    const apiKey = process.env.GOOGLE_AI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GOOGLE_AI_API_KEY 未配置');
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1024,
-      },
-    });
-
-    const result = await model.generateContent(prompt);
-    return result.response.text().trim();
-  }
-
-  /**
-   * Fallback 提示词生成（当 LLM 不可用时）
-   */
-  private buildFallbackPrompt(request: ImageGenerationRequest): string {
-    const { title, platform, template, visualStylePrompt, customizations } = request;
-
-    let prompt = `Create a professional social media cover image with the title: "${title}".`;
-
-    const platformPrompts: Record<string, string> = {
-      xiaohongshu: "minimalist design, clean layout, lifestyle photography, soft colors",
-      wechat: "professional design, corporate colors, clean typography",
-      taobao: "product-focused, bright colors, promotional design, e-commerce style",
-      douyin: "dynamic composition, vibrant colors, trending aesthetics",
-      weibo: "social media style, hashtag-friendly, shareable design",
-      bilibili: "anime-inspired or tech aesthetic, bold typography, gaming culture",
-      zhihu: "intellectual design, blue color scheme, knowledge-based imagery",
-    };
-
-    prompt += ` Style: ${platformPrompts[platform.id] || "professional social media design"}.`;
-
-    // 注入视觉风格
-    if (visualStylePrompt) {
-      prompt += ` ${visualStylePrompt}.`;
-    }
-
-    prompt += ` Color scheme: ${template.backgroundColor} background, ${template.textColor} text.`;
-
-    if (customizations?.backgroundColor) {
-      prompt += ` Background color: ${customizations.backgroundColor}.`;
-    }
-
-    prompt += ` High resolution, professional quality, suitable for ${platform.dimensions.width}x${platform.dimensions.height} pixels.`;
-
-    return prompt;
+    // 清理多余空格（但保留换行结构）
+    return finalPrompt.replace(/[ \t]+/g, ' ').trim();
   }
 
   /**
@@ -452,7 +406,15 @@ export class ImageGenerationAgent {
       format: optimized.format,
     });
 
-    // 生成 WebP URL
+    // 生成最终 URL
+    // 注意：generateWebPUrl 仅用于 Cloudflare R2 Image Resizing
+    // 本地存储模式直接返回原始 URL
+    const isLocalStorage = process.env.STORAGE_MODE !== 'r2';
+    if (isLocalStorage) {
+      return result.url;
+    }
+
+    // R2 模式：添加 Image Resizing 参数
     const webpUrl = generateWebPUrl(result.url, {
       width: request.platform.dimensions.width,
       height: request.platform.dimensions.height,

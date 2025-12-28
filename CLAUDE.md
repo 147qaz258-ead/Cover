@@ -1,3 +1,22 @@
+<!-- OPENSPEC:START -->
+# OpenSpec Instructions
+
+These instructions are for AI assistants working in this project.
+
+Always open `@/openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
+
+Use `@/openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
+
+Keep this managed block so 'openspec update' can refresh the instructions.
+
+<!-- OPENSPEC:END -->
+
 ﻿# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
@@ -13,6 +32,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Cover is an AI-powered cover image generator for Chinese social media platforms (Xiaohongshu, WeChat, Taobao, Douyin). It uses multi-stage AI agent chains to process user text and generate platform-specific, publication-ready cover posters.
+
+## 最高原则
+1.  **可读性 > 抽象**：代码的可读性是绝对的最高优先级。除非能显著减少代码重复或降低复杂度，否则不要创建抽象。坚决避免“过度设计”。
+
+2.  **务实使用高级特性**：仅当有明确的性能优势或架构必要性时，**才可以使用**高级模式（如单例模式、装饰器、工厂模式）。
+
+3.  **显式优于隐式**：避免使用隐藏过多逻辑的“魔法”代码。显式定义返回类型和属性。
 
 ## Commands
 
@@ -137,6 +163,10 @@ OPENAI_API_KEY=                    # OpenAI Official
 GOOGLE_AI_API_KEY=                 # Google Gemini
 REPLICATE_API_TOKEN=               # Replicate
 LAOZHANG_API_KEY=                  # Laozhang API relay (recommended)
+ZHIPUAI_API_KEY=                   # 智谱 AI (GLM-4 for CoverCreativeDirector)
+
+# LLM Provider Selection (optional, auto-detected by default)
+LLM_PROVIDER=zhipu_glm46           # Options: zhipu_glm46, gemini_flash, openai_gpt4o
 
 # Storage Mode
 STORAGE_MODE=local                 # "local" (dev) or "r2" (prod)
